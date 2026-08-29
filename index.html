@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Treino Força</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#0f1115;color:#e7e9ee;font:16px/1.45 system-ui,-apple-system,sans-serif;padding:12px 12px 90px}
+h1{font-size:19px;margin:4px 0 2px}h2{font-size:15px;margin:22px 0 8px;color:#8b93a7;text-transform:uppercase;letter-spacing:.06em}
+.sub{color:#8b93a7;font-size:13px;margin-bottom:14px}
+.card{background:#181b22;border:1px solid #262a34;border-radius:14px;padding:14px;margin-bottom:12px}
+.ex{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ex b{font-size:17px}.load{font-size:26px;font-weight:700;color:#5ee6a8;white-space:nowrap}
+.meta{color:#8b93a7;font-size:13px;margin-top:3px}
+.warm{font-size:12px;color:#7d8698;margin-top:8px;font-variant-numeric:tabular-nums}
+.plates{font-size:12px;color:#c8a24a;margin-top:4px}
+.reps{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.reps input{width:58px;padding:11px;font-size:19px;text-align:center;background:#0f1115;color:#fff;border:1px solid #333947;border-radius:10px;font-weight:600}
+button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:14px 16px;background:#2f6df6;color:#fff;width:100%;margin-top:8px}
+button.gh{background:#242835;color:#c3c9d6}button.dn{background:#1f8a5b}
+.tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700;margin-left:6px}
+.up{background:#153f2c;color:#5ee6a8}.same{background:#3d3418;color:#e6c65e}.dl{background:#4a1d1d;color:#ff8b8b}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:7px 4px;border-bottom:1px solid #232732;text-align:left}th{color:#8b93a7;font-weight:600}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#12151c;border-top:1px solid #262a34;display:flex;padding:8px;gap:8px}
+.bar button{margin:0}
+.tmr{position:fixed;right:12px;bottom:74px;background:#242835;border:1px solid #333947;border-radius:30px;padding:10px 16px;font-variant-numeric:tabular-nums;font-weight:700}
+textarea{width:100%;height:130px;background:#0f1115;color:#9aa3b4;border:1px solid #333947;border-radius:10px;font-size:11px;padding:8px}
+</style>
+</head>
+<body>
+
+<h1>Plano de Força — Full Body</h1>
+<div class="sub" id="sub"></div>
+<div id="app"></div>
+
+<div class="bar">
+  <button class="gh" onclick="view='hist';render()">Histórico</button>
+  <button class="gh" onclick="view='train';render()">Treino</button>
+  <button class="gh" onclick="view='exp';render()">Exportar</button>
+</div>
+<div class="tmr" id="tmr" onclick="startTimer()">⏱ 3:00</div>
+
+<script>
+const BAR=20, MIN_PLATE=1;               // anilha mais leve: 1kg (=+2kg na barra)
+const EX={
+  squat:{n:'Agachamento livre',s:3,inc:4,shared:1},
+  bench:{n:'Supino reto',s:3,inc:2},
+  row:  {n:'Remada curvada',s:3,inc:2},
+  ohp:  {n:'Desenvolvimento militar',s:3,inc:2},
+  dead: {n:'Levantamento terra',s:1,inc:4},
+  hip:  {n:'Elevação pélvica',s:2,inc:4,reps:'10-12',noProg:1}
+};
+const A=['squat','bench','row'], B=['squat','ohp','dead','hip'];
+
+const DEF={loads:{squat:108,bench:74,row:88,ohp:52,dead:174,hip:80},
+           fails:{}, log:[], next:'A', floor:{bench:70}};
+let S=JSON.parse(localStorage.getItem('treino')||'null')||DEF;
+let view='train', draft={};
+const save=()=>localStorage.setItem('treino',JSON.stringify(S));
+const r2=v=>Math.max(BAR,Math.round(v/2)*2);
+
+function plates(w){                       // anilhas por lado
+  let side=(w-BAR)/2; if(side<=0) return 'só a barra';
+  const av=[25,20,15,10,5,2,1], out=[];
+  for(const p of av){let c=0;while(side>=p-.001){side-=p;c++}if(c)out.push(c>1?c+'×'+p:''+p)}
+  return out.join(' + ')+' por lado';
+}
+function warm(w){
+  const pk=[.28,.5,.7,.85], rp=[10,5,3,2], o=[`barra ${BAR}×10`];
+  pk.forEach((p,i)=>{const x=r2(w*p); if(x>BAR&&x<w) o.push(`${x}×${rp[i]}`)});
+  return [...new Set(o)].join(' → ');
+}
+
+function render(){
+  document.getElementById('sub').textContent =
+    `Próximo: Treino ${S.next} · sessão ${S.log.length+1} · 3x/semana · alterna A-B-A / B-A-B`;
+  const a=document.getElementById('app'); a.innerHTML='';
+  if(view==='train') return renderTrain(a);
+  if(view==='hist')  return renderHist(a);
+  renderExp(a);
+}
+
+function renderTrain(a){
+  const list = S.next==='A'?A:B;
+  a.innerHTML = list.map(k=>{
+    const e=EX[k], w=S.loads[k], f=S.fails[k]||0;
+    const flag = f>0?`<span class="tag same">falhou ${f}× — repetindo</span>`:'';
+    const inputs = Array.from({length:e.s},(_,i)=>
+      `<input type="number" inputmode="numeric" placeholder="s${i+1}" id="i_${k}_${i}">`).join('');
+    return `<div class="card">
+      <div class="ex"><b>${e.n}${flag}</b><span class="load">${w} kg</span></div>
+      <div class="meta">${e.s} × ${e.reps||5} reps · descanso 2–3 min</div>
+      <div class="plates">🔩 ${plates(w)}</div>
+      <div class="warm">Aquecimento: ${warm(w)}</div>
+      <div class="reps">${inputs}</div>
+    </div>`;
+  }).join('') +
+  `<button class="dn" onclick="finish()">✓ Encerrar sessão e calcular próximas cargas</button>
+   <button class="gh" onclick="if(confirm('Trocar para Treino ${S.next==='A'?'B':'A'}?')){S.next=S.next==='A'?'B':'A';save();render()}">
+     Trocar para Treino ${S.next==='A'?'B':'A'}</button>`;
+}
+
+function finish(){
+  const list=S.next==='A'?A:B, entry={t:S.next,d:new Date().toISOString().slice(0,10),ex:{}}, msg=[];
+  for(const k of list){
+    const e=EX[k], tgt=e.reps?10:5, done=[];
+    for(let i=0;i<e.s;i++){const v=+(document.getElementById(`i_${k}_${i}`).value||0); done.push(v)}
+    if(done.every(v=>v===0)) continue;
+    const w=S.loads[k], ok=done.every(v=>v>=tgt);
+    entry.ex[k]={w,reps:done};
+    if(e.noProg){msg.push(`${e.n}: mantido em ${w} kg`);continue}
+    if(ok){ setLoad(k, r2(w+e.inc)); S.fails[k]=0; msg.push(`✔ ${e.n}: ${w} → ${S.loads[k]} kg`); }
+    else {
+      S.fails[k]=(S.fails[k]||0)+1;
+      if(S.fails[k]>=2){
+        let nw=Math.max(r2(w*0.9), S.floor[k]||BAR);
+        setLoad(k,nw); S.fails[k]=0; msg.push(`⚠ ${e.n}: DELOAD ${w} → ${nw} kg`);
+      } else msg.push(`↺ ${e.n}: repete ${w} kg (1ª falha)`);
+    }
+  }
+  if(!Object.keys(entry.ex).length) return alert('Preencha as repetições.');
+  entry.msg=msg; S.log.unshift(entry); S.next = S.next==='A'?'B':'A'; save();
+  alert('Sessão registrada!\n\n'+msg.join('\n')+`\n\nPróximo: Treino ${S.next}`);
+  view='hist'; render();
+}
+function setLoad(k,v){ S.loads[k]=v; }   // squat é chave única → já compartilha A e B
+
+function renderHist(a){
+  if(!S.log.length){a.innerHTML='<div class="card">Nenhuma sessão registrada ainda.</div>';return}
+  a.innerHTML='<h2>Histórico</h2>'+S.log.map((s,i)=>`
+    <div class="card">
+      <div class="ex"><b>Treino ${s.t}</b><span class="meta">${s.d}</span></div>
+      <table><tr><th>Exercício</th><th>Carga</th><th>Reps</th></tr>
+      ${Object.entries(s.ex).map(([k,v])=>
+        `<tr><td>${EX[k].n}</td><td>${v.w} kg</td><td>${v.reps.join('-')}</td></tr>`).join('')}
+      </table>
+      <div class="warm">${s.msg.join('<br>')}</div>
+      ${i===0?`<button class="gh" onclick="undo()">Desfazer esta sessão</button>`:''}
+    </div>`).join('');
+}
+function undo(){
+  if(!confirm('Desfazer a última sessão? As cargas voltam ao valor anterior.'))return;
+  const s=S.log.shift();
+  for(const [k,v] of Object.entries(s.ex)){ S.loads[k]=v.w; S.fails[k]=0; }
+  S.next=s.t; save(); render();
+}
+
+function renderExp(a){
+  a.innerHTML=`<h2>Exportar / Importar</h2>
+  <div class="card">
+    <div class="meta">Copie e cole no chat com o Claude para análise, ou guarde como backup.</div>
+    <textarea id="io">${JSON.stringify(S)}</textarea>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('io').value).then(()=>alert('Copiado!'))">Copiar JSON</button>
+    <button class="gh" onclick="imp()">Importar JSON colado acima</button>
+    <button class="gh" onclick="if(confirm('Zerar TUDO?')){localStorage.clear();location.reload()}">Zerar histórico</button>
+  </div>`;
+}
+function imp(){
+  try{ S=JSON.parse(document.getElementById('io').value); save(); alert('Importado!'); view='train'; render(); }
+  catch(e){ alert('JSON inválido.') }
+}
+
+let tI=null,tS=180;
+function startTimer(){
+  clearInterval(tI); tS=180;
+  tI=setInterval(()=>{
+    tS--; document.getElementById('tmr').textContent='⏱ '+Math.floor(tS/60)+':'+String(tS%60).padStart(2,'0');
+    if(tS<=0){clearInterval(tI); navigator.vibrate&&navigator.vibrate([300,150,300]); document.getElementById('tmr').textContent='⏱ 3:00'}
+  },1000);
+}
+render();
+</script>
+</body>
+</html>
