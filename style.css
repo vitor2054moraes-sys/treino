@@ -1,0 +1,82 @@
+/* Ferro — aparência (tema escuro, feito para o celular na academia). Cores lisas; medidas nas variáveis. */
+:root {
+  --fundo: #0f1115; --cartao: #181c23; --cartao2: #1f242d; --linha: #2b313c;
+  --texto: #e8ecf2; --suave: #a0aab9; --cor: #4f8cff; --ok: #3ccf7f; --atencao: #f0b04a; --perigo: #ff6b6f;
+  --raio: 14px;
+  --fonte: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; padding: 0 0 150px; background: var(--fundo); color: var(--texto); font: 400 1rem/1.45 var(--fonte); }
+:focus-visible { outline: 3px solid var(--cor); outline-offset: 2px; }
+.oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Topo com as abas (preso no alto) */
+.topo { position: sticky; top: 0; z-index: 20; padding: 12px 16px 0; padding-top: max(12px, env(safe-area-inset-top));
+  background: var(--fundo); border-bottom: 1px solid var(--linha); }
+.marca { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--cor); font-size: .8rem; font-weight: 800;
+  letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: 2px 0 0; font-size: 1.25rem; letter-spacing: -.01em; }
+.sub { margin: 2px 0 10px; color: var(--suave); font-size: .85rem; }
+.abas { display: flex; }
+.abas button { flex: 1; padding: 11px 0; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--suave);
+  font: 650 .9rem var(--fonte); cursor: pointer; }
+.abas button[aria-selected="true"] { color: var(--texto); border-color: var(--cor); }
+main { max-width: 640px; margin: 0 auto; padding: 16px; }
+.aba { display: none; }
+.aba.ativa { display: block; }
+
+/* Cartões dos exercícios */
+.cartao { margin-bottom: 12px; padding: 14px; border: 1px solid var(--linha); border-radius: var(--raio); background: var(--cartao); }
+.cartao h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1rem; }
+.nos-dois { padding: 0 7px; border-radius: 6px; background: var(--cartao2); color: var(--suave); font-size: .72rem; font-weight: 700; }
+.carga { margin: 2px 0 0; font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.carga small { font-size: .85rem; font-weight: 500; color: var(--suave); }
+.meta { margin: 0 0 8px; color: var(--suave); font-size: .85rem; }
+.alerta { color: var(--atencao); }
+.anilhas { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; background: var(--cartao2); font-size: .88rem; }
+.aquecimento { margin-bottom: 10px; color: var(--suave); font-size: .88rem; }
+.aquecimento summary { cursor: pointer; padding: 4px 0; font-weight: 650; }
+.aquecimento ol { margin: 4px 0 0; padding-left: 1.4em; line-height: 1.7; }
+.series { display: flex; gap: 8px; }
+.series label { flex: 1; min-width: 0; color: var(--suave); font-size: .75rem; }
+.series input { width: 100%; margin-top: 3px; padding: 11px 6px; border: 1px solid var(--linha); border-radius: 10px; background: var(--cartao2);
+  color: var(--texto); font-size: 1.1rem; text-align: center; }
+.series input:focus { border-color: var(--cor); outline: none; }
+
+/* Botões */
+.botao { display: block; width: 100%; margin-bottom: 8px; padding: 14px; border: 0; border-radius: 12px; background: var(--cartao2);
+  color: var(--texto); font: 700 .95rem var(--fonte); cursor: pointer; }
+.botao.principal { background: var(--cor); color: #08101f; }
+.botao.perigo { background: #3a1f22; color: var(--perigo); }
+.botao.pequeno { padding: 10px; font-size: .85rem; }
+
+/* Histórico e dados */
+.registro { margin-bottom: 16px; padding-left: 12px; border-left: 3px solid var(--linha); }
+.registro p { margin: 0; }
+.data { color: var(--suave); font-size: .8rem; }
+.registro ul { margin: 6px 0; padding-left: 16px; color: var(--suave); font-size: .85rem; }
+.msg { font-size: .85rem; }
+.msg.ok { color: var(--ok); } .msg.atencao { color: var(--atencao); } .msg.perigo { color: var(--perigo); }
+.nota { color: var(--suave); font-size: .85rem; margin: 4px 0 10px; }
+textarea { width: 100%; height: 120px; margin-bottom: 8px; padding: 10px; border: 1px solid var(--linha); border-radius: 10px;
+  background: var(--cartao2); color: var(--texto); font: .8rem var(--mono); }
+.marcar { display: flex; align-items: center; gap: 10px; }
+.marcar input { width: 20px; height: 20px; accent-color: var(--cor); }
+
+/* Cronômetro (preso embaixo, compacto) */
+#doca { position: fixed; right: 0; bottom: 0; left: 0; z-index: 30; padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+  background: #151922; border-top: 1px solid var(--linha); }
+.linha-relogio { display: flex; align-items: center; gap: 8px; max-width: 640px; margin: 0 auto; }
+.linha-relogio > div { flex: 1; }
+#relogio { font: 700 2rem/1 var(--mono); letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+#relogio.rodando { color: var(--cor); }
+#relogio.acabou { color: var(--ok); }
+#rotulo { color: var(--suave); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
+.linha-relogio button { min-height: 46px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--cartao2); color: var(--texto);
+  font: 700 .9rem var(--fonte); cursor: pointer; }
+.linha-relogio .ir { min-width: 104px; background: var(--cor); color: #08101f; }
+.escolha { display: flex; gap: 6px; max-width: 640px; margin: 8px auto 0; }
+.escolha button { flex: 1; min-height: 38px; border: 1px solid var(--linha); border-radius: 10px; background: var(--cartao2); color: var(--suave);
+  font: 650 .85rem var(--fonte); cursor: pointer; }
+.escolha button.ligado { border-color: var(--cor); color: var(--texto); background: #1e2a44; }
